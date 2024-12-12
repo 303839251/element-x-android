@@ -66,4 +66,17 @@ class RustSyncService(
             }
             .distinctUntilChanged()
             .stateIn(sessionCoroutineScope, SharingStarted.Eagerly, SyncState.Idle)
+    // 在 startSync 中添加逻辑
+    override suspend fun startSync() = runCatching {
+        if (!isServiceReady.get()) {
+            Timber.d("Can't start sync: service is not ready")
+            return@runCatching
+        }
+        Timber.i("Start sync")
+        innerSyncService.start()
+        // 确保时间线订阅
+        timelineItemsSubscriber.subscribeIfNeeded()
+    }.onFailure {
+        Timber.d("Start sync failed: $it")
+    }
 }

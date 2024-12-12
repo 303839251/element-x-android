@@ -35,4 +35,25 @@ class RustNotificationService(
             }
         }
     }
+    // 更新 NotificationMapper 映射逻辑
+    private val notificationMapper: NotificationMapper = NotificationMapper(clock)
+
+    fun map(eventId: EventId, roomId: RoomId, notificationItem: NotificationItem): NotificationData {
+        return NotificationData(
+            eventId = eventId,
+            roomId = roomId,
+            senderAvatarUrl = notificationItem.senderAvatarUrl,
+            senderDisplayName = notificationItem.senderDisplayName,
+            senderIsNameAmbiguous = notificationItem.senderIsNameAmbiguous,
+            roomAvatarUrl = notificationItem.roomAvatarUrl,
+            roomDisplayName = notificationItem.roomDisplayName,
+            isDirect = notificationItem.isDirect,
+            isDm = notificationItem.isDm,
+            isEncrypted = notificationItem.isEncrypted,
+            isNoisy = notificationItem.isNoisy,
+            timestamp = notificationItem.timestamp,
+            content = mapContent(notificationItem),
+            hasMention = notificationItem.hasMention
+        )
+    }
 }

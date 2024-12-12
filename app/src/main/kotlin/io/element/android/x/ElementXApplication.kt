@@ -29,4 +29,31 @@ class ElementXApplication : Application(), DaggerComponentOwner {
         }
         logApplicationInfo(this)
     }
+    //新增
+    override fun onCreate() {
+        super.onCreate()
+        // 添加初始化通知通道
+        createNotificationChannels()
+        AppInitializer.getInstance(this).apply {
+            initializeComponent(CrashInitializer::class.java)
+            initializeComponent(TracingInitializer::class.java)
+            initializeComponent(CacheCleanerInitializer::class.java)
+        }
+        logApplicationInfo(this)
+    }
+
+    // 添加 createNotificationChannels 方法
+    private fun createNotificationChannels() {
+        val channel = NotificationChannel(
+            "default_channel_id",
+            "Default Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notifications for new messages."
+        }
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
+    }
+
 }

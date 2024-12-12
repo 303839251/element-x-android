@@ -40,6 +40,8 @@ internal class TimelineItemsSubscriber(
     private val initLatch: CompletableDeferred<Unit>,
     private val isTimelineInitialized: MutableStateFlow<Boolean>,
     private val onNewSyncedEvent: () -> Unit,
+    //添加 NotificationService 参数
+    private val notificationService: NotificationService,
 ) {
     private var subscriptionCount = 0
     private val mutex = Mutex()
@@ -109,4 +111,41 @@ internal class TimelineItemsSubscriber(
             timelineDiffProcessor.postDiffs(diffsToProcess)
         }
     }
+    // 修改 `onNewSyncedEvent` 的实现
+    timeline.timelineDiffFlow()
+        .onEach { diffs ->
+            if (diffs.any { diff -> diff.eventOrigin() == EventItemOrigin.SYNC }) {
+                onNewSyncedEvent()
+
+                // 获取通知数据并触发任务栏通知
+                val newEvents = diffs.filter { it.eventOrigin() == EventItemOrigin.SYNC }
+                newEvents.forEach { diff ->
+                    val eventId = diff.eventId()
+                    val roomId = diff.roomId()
+                    if (eventId != null && roomId != null) {
+                        notificationService.getNotification(roomId, eventId).onSuccess { notificationData ->
+                            notificationData?.let {
+                                showNotification(it)
+                            }
+                        }
+                    }
+                }
+            }
+            postDiffs(diffs)
+        }
+        .launchIn(coroutineScope)
+
+    // 添加 showNotification 方法
+    private fun showNotification(data: NotificationData) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(context, "default_channel_id")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(data.roomDisplayName ?: "New Message")
+            // 格式化通知内容
+            .setContentText(data.content.toString())
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        notificationManager.notify(data.eventId.hashCode(), notification)
+    }
+
 }
