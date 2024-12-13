@@ -129,7 +129,33 @@ class RustMatrixClient(
     clock: SystemClock,
     timelineEventTypeFilterFactory: TimelineEventTypeFilterFactory,
     featureFlagService: FeatureFlagService,
+    private val context: Context,
 ) : MatrixClient {
+    private val timelineItemsSubscriber: TimelineItemsSubscriber
+    private val rustSyncService: RustSyncService
+
+    init {
+        // 初始化 timelineItemsSubscriber
+        timelineItemsSubscriber = TimelineItemsSubscriber(
+            context = context,
+            timelineCoroutineScope = sessionCoroutineScope,
+            dispatcher = dispatchers.io,
+            // 假设 innerSyncService 提供 timeline 方法
+            timeline = innerSyncService.timeline(),
+            timelineDiffProcessor = MatrixTimelineDiffProcessor(/* 初始化逻辑 */),
+            initLatch = CompletableDeferred(),
+            isTimelineInitialized = MutableStateFlow(false),
+            onNewSyncedEvent = { /* 回调实现 */ },
+            notificationService = RustNotificationService(innerClient.notificationClient(notificationProcessSetup), dispatchers, clock)
+        )
+
+        // 初始化 rustSyncService
+        rustSyncService = RustSyncService(
+            innerSyncService = innerSyncService,
+            sessionCoroutineScope = sessionCoroutineScope,
+            timelineItemsSubscriber = timelineItemsSubscriber
+        )
+    }
     override val sessionId: UserId = UserId(innerClient.userId())
     override val deviceId: DeviceId = DeviceId(innerClient.deviceId())
     override val sessionCoroutineScope = appCoroutineScope.childScope(dispatchers.main, "Session-$sessionId")

@@ -27,7 +27,8 @@ import org.matrix.rustcomponents.sdk.SyncService as InnerSyncService
 class RustSyncService(
     private val innerSyncService: InnerSyncService,
     private val sessionCoroutineScope: CoroutineScope,
-    private val timelineItemsSubscriber: TimelineItemsSubscriber // 注入 TimelineItemsSubscriber
+    // 注入 TimelineItemsSubscriber
+    private val timelineItemsSubscriber: TimelineItemsSubscriber
 ) : SyncService {
     private val isServiceReady = AtomicBoolean(true)
 
