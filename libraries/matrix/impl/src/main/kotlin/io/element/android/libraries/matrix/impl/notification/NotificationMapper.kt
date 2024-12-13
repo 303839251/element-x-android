@@ -24,6 +24,9 @@ class NotificationMapper(
 ) {
     private val notificationContentMapper = NotificationContentMapper()
 
+    /**
+     * Map a [NotificationItem] to [NotificationData].
+     */
     fun map(
         eventId: EventId,
         roomId: RoomId,
@@ -57,15 +60,23 @@ class NotificationMapper(
 class NotificationContentMapper {
     private val timelineEventToNotificationContentMapper = TimelineEventToNotificationContentMapper()
 
+    /**
+     * Map a [NotificationEvent] to [NotificationContent].
+     */
     fun map(notificationEvent: NotificationEvent): NotificationContent =
         when (notificationEvent) {
             is NotificationEvent.Timeline -> timelineEventToNotificationContentMapper.map(notificationEvent.event)
             is NotificationEvent.Invite -> NotificationContent.Invite(
                 senderId = UserId(notificationEvent.sender),
             )
+            // 处理其他类型的 NotificationEvent
+            else -> NotificationContent.Unknown
         }
 }
 
+/**
+ * Extension function to extract timestamp from a [NotificationItem].
+ */
 private fun NotificationItem.timestamp(): Long? {
     return (this.event as? NotificationEvent.Timeline)?.event?.timestamp()?.toLong()
 }

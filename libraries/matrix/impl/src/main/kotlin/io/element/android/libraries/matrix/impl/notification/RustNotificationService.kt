@@ -24,6 +24,9 @@ class RustNotificationService(
 ) : NotificationService {
     private val notificationMapper: NotificationMapper = NotificationMapper(clock)
 
+    /**
+     * Fetch a notification based on room and event IDs.
+     */
     override suspend fun getNotification(
         roomId: RoomId,
         eventId: EventId,
@@ -35,25 +38,18 @@ class RustNotificationService(
             }
         }
     }
-    // 更新 NotificationMapper 映射逻辑
-    private val notificationMapper: NotificationMapper = NotificationMapper(clock)
 
-    fun map(eventId: EventId, roomId: RoomId, notificationItem: NotificationItem): NotificationData {
-        return NotificationData(
-            eventId = eventId,
-            roomId = roomId,
-            senderAvatarUrl = notificationItem.senderAvatarUrl,
-            senderDisplayName = notificationItem.senderDisplayName,
-            senderIsNameAmbiguous = notificationItem.senderIsNameAmbiguous,
-            roomAvatarUrl = notificationItem.roomAvatarUrl,
-            roomDisplayName = notificationItem.roomDisplayName,
-            isDirect = notificationItem.isDirect,
-            isDm = notificationItem.isDm,
-            isEncrypted = notificationItem.isEncrypted,
-            isNoisy = notificationItem.isNoisy,
-            timestamp = notificationItem.timestamp,
-            content = mapContent(notificationItem),
-            hasMention = notificationItem.hasMention
-        )
+    /**
+     * Fetch and display all notifications for a specific room.
+     */
+    suspend fun fetchAllNotifications(roomId: RoomId): List<NotificationData> {
+        return withContext(dispatchers.io) {
+            val notifications = notificationClient.getNotificationsForRoom(roomId.value)
+            notifications.mapNotNull { item ->
+                runCatching {
+                    item.use { notificationMapper.map(EventId(it.eventId), roomId, it) }
+                }.getOrNull()
+            }
+        }
     }
 }
