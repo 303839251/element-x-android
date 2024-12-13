@@ -7,6 +7,9 @@
 
 package io.element.android.libraries.matrix.impl.notification
 
+import android.app.NotificationManager
+import android.content.Context
+import androidx.core.app.NotificationCompat
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
@@ -20,13 +23,11 @@ import org.matrix.rustcomponents.sdk.use
 class RustNotificationService(
     private val notificationClient: NotificationClient,
     private val dispatchers: CoroutineDispatchers,
+    private val context: Context,
     clock: SystemClock,
 ) : NotificationService {
     private val notificationMapper: NotificationMapper = NotificationMapper(clock)
 
-    /**
-     * Fetch a notification based on room and event IDs.
-     */
     override suspend fun getNotification(
         roomId: RoomId,
         eventId: EventId,
@@ -34,22 +35,28 @@ class RustNotificationService(
         runCatching {
             val item = notificationClient.getNotification(roomId.value, eventId.value)
             item?.use {
-                notificationMapper.map(eventId, roomId, it)
+                val notificationData = notificationMapper.map(eventId, roomId, it)
+                showNotification(notificationData)
+                notificationData
             }
         }
     }
 
     /**
-     * Fetch and display all notifications for a specific room.
+     * 显示通知
      */
-    suspend fun fetchAllNotifications(roomId: RoomId): List<NotificationData> {
-        return withContext(dispatchers.io) {
-            val notifications = notificationClient.getNotificationsForRoom(roomId.value)
-            notifications.mapNotNull { item ->
-                runCatching {
-                    item.use { notificationMapper.map(EventId(it.eventId), roomId, it) }
-                }.getOrNull()
-            }
-        }
+    private fun showNotification(notificationData: NotificationData) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val notification = NotificationCompat.Builder(context, "default_channel_id")
+            .setSmallIcon(android.R.drawable.ic_notification_overlay)
+            .setContentTitle(notificationData.roomDisplayName ?: "New Message")
+            .setContentText(notificationData.content.toString())
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        notificationManager.notify(notificationData.eventId.hashCode(), notification)
     }
 }
+

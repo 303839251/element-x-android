@@ -9,6 +9,7 @@ package io.element.android.libraries.matrix.impl.sync
 
 import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.sync.SyncState
+import io.element.android.libraries.matrix.impl.timeline.TimelineItemsSubscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,22 +26,26 @@ import org.matrix.rustcomponents.sdk.SyncService as InnerSyncService
 
 class RustSyncService(
     private val innerSyncService: InnerSyncService,
-    sessionCoroutineScope: CoroutineScope
+    private val sessionCoroutineScope: CoroutineScope,
+    private val timelineItemsSubscriber: TimelineItemsSubscriber // 注入 TimelineItemsSubscriber
 ) : SyncService {
     private val isServiceReady = AtomicBoolean(true)
 
-    override suspend fun startSync() = runCatching {
+    override suspend fun startSync(): Result<Unit> = runCatching {
         if (!isServiceReady.get()) {
             Timber.d("Can't start sync: service is not ready")
             return@runCatching
         }
         Timber.i("Start sync")
         innerSyncService.start()
+
+        // 确保时间线订阅
+        timelineItemsSubscriber.subscribeIfNeeded()
     }.onFailure {
         Timber.d("Start sync failed: $it")
     }
 
-    override suspend fun stopSync() = runCatching {
+    override suspend fun stopSync(): Result<Unit> = runCatching {
         if (!isServiceReady.get()) {
             Timber.d("Can't stop sync: service is not ready")
             return@runCatching
@@ -66,17 +71,4 @@ class RustSyncService(
             }
             .distinctUntilChanged()
             .stateIn(sessionCoroutineScope, SharingStarted.Eagerly, SyncState.Idle)
-    // 在 startSync 中添加逻辑
-    override suspend fun startSync() = runCatching {
-        if (!isServiceReady.get()) {
-            Timber.d("Can't start sync: service is not ready")
-            return@runCatching
-        }
-        Timber.i("Start sync")
-        innerSyncService.start()
-        // 确保时间线订阅
-        timelineItemsSubscriber.subscribeIfNeeded()
-    }.onFailure {
-        Timber.d("Start sync failed: $it")
-    }
 }
