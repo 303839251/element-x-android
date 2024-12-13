@@ -7,9 +7,6 @@
 
 package io.element.android.libraries.matrix.impl.notification
 
-import android.app.NotificationManager
-import android.content.Context
-import androidx.core.app.NotificationCompat
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
@@ -23,7 +20,6 @@ import org.matrix.rustcomponents.sdk.use
 class RustNotificationService(
     private val notificationClient: NotificationClient,
     private val dispatchers: CoroutineDispatchers,
-    private val context: Context,
     clock: SystemClock,
 ) : NotificationService {
     private val notificationMapper: NotificationMapper = NotificationMapper(clock)
@@ -35,28 +31,8 @@ class RustNotificationService(
         runCatching {
             val item = notificationClient.getNotification(roomId.value, eventId.value)
             item?.use {
-                val notificationData = notificationMapper.map(eventId, roomId, it)
-                showNotification(notificationData)
-                notificationData
+                notificationMapper.map(eventId, roomId, it)
             }
         }
     }
-
-    /**
-     * 显示通知
-     */
-    private fun showNotification(notificationData: NotificationData) {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val notification = NotificationCompat.Builder(context, "default_channel_id")
-            .setSmallIcon(android.R.drawable.ic_notification_overlay)
-            .setContentTitle(notificationData.roomDisplayName ?: "New Message")
-            .setContentText(notificationData.content.toString())
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        notificationManager.notify(notificationData.eventId.hashCode(), notification)
-    }
 }
-

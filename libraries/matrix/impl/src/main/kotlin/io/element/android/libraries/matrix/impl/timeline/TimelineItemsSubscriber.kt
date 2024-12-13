@@ -7,18 +7,12 @@
 
 package io.element.android.libraries.matrix.impl.timeline
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
-import androidx.core.app.NotificationCompat
 import io.element.android.libraries.core.coroutine.childScope
-import io.element.android.libraries.matrix.api.notification.NotificationData
-import io.element.android.libraries.matrix.api.notification.NotificationService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -32,17 +26,13 @@ import org.matrix.rustcomponents.sdk.TimelineItem
 import uniffi.matrix_sdk_ui.EventItemOrigin
 
 private const val INITIAL_MAX_SIZE = 50
-private const val NOTIFICATION_CHANNEL_ID = "default_channel_id"
-private const val NOTIFICATION_CHANNEL_NAME = "Default Notifications"
 
 /**
- * This class is responsible for subscribing to a timeline and posting the items/diffs to the timelineDiffProcessor.
+ * This class is responsible for subscribing to a timeline and post the items/diffs to the timelineDiffProcessor.
  * It will also trigger a callback when a new synced event is received.
  * It will also handle the initial items and make sure they are posted before any diff.
  */
 internal class TimelineItemsSubscriber(
-    // Added Context parameter
-    private val context: Context,
     timelineCoroutineScope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
     private val timeline: Timeline,
@@ -50,17 +40,12 @@ internal class TimelineItemsSubscriber(
     private val initLatch: CompletableDeferred<Unit>,
     private val isTimelineInitialized: MutableStateFlow<Boolean>,
     private val onNewSyncedEvent: () -> Unit,
-    // Added NotificationService parameter
-    private val notificationService: NotificationService,
+    private val notificationService: NotificationService
 ) {
     private var subscriptionCount = 0
     private val mutex = Mutex()
 
     private val coroutineScope = timelineCoroutineScope.childScope(dispatcher, "TimelineItemsSubscriber")
-
-    init {
-        createNotificationChannel()
-    }
 
     /**
      * Add a subscription to the timeline and start posting items/diffs to the timelineDiffProcessor.
@@ -98,8 +83,10 @@ internal class TimelineItemsSubscriber(
 
     private suspend fun postItems(items: List<TimelineItem>) = coroutineScope {
         if (items.isEmpty()) {
+            // Makes sure to post empty list if there is no item, so you can handle empty state.
             timelineDiffProcessor.postItems(emptyList())
         } else {
+            // Split the initial items in multiple list as there is no pagination in the cached data, so we can post timelineItems asap.
             items.chunked(INITIAL_MAX_SIZE).reversed().forEach {
                 ensureActive()
                 timelineDiffProcessor.postItems(it)
@@ -114,6 +101,7 @@ internal class TimelineItemsSubscriber(
         if (!isTimelineInitialized.value) {
             val resetDiff = diffsToProcess.firstOrNull { it.change() == TimelineChange.RESET }
             if (resetDiff != null) {
+                // Keep using the postItems logic so we can post the timelineItems asap.
                 postItems(resetDiff.reset() ?: emptyList())
                 diffsToProcess.remove(resetDiff)
             }
@@ -121,54 +109,6 @@ internal class TimelineItemsSubscriber(
         initLatch.await()
         if (diffsToProcess.isNotEmpty()) {
             timelineDiffProcessor.postDiffs(diffsToProcess)
-        }
-    }
-
-    /**
-     * Handle new messages and trigger notifications.
-     */
-    private fun handleNewMessages(diffs: List<TimelineDiff>) {
-        val newEvents = diffs.filter { it.eventOrigin() == EventItemOrigin.SYNC }
-        newEvents.forEach { diff ->
-            val eventId = diff.eventId()
-            val roomId = diff.roomId()
-            if (eventId != null && roomId != null) {
-                notificationService.getNotification(roomId, eventId).onSuccess { notificationData ->
-                    notificationData?.let {
-                        showNotification(it)
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Display a notification for the given NotificationData.
-     */
-    private fun showNotification(data: NotificationData) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(data.roomDisplayName ?: "New Message")
-            .setContentText(data.content.toString())
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        notificationManager.notify(data.eventId.hashCode(), notification)
-    }
-
-    /**
-     * Create a notification channel for Android O and above.
-     */
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                NOTIFICATION_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
         }
     }
 }
