@@ -8,6 +8,7 @@
 package io.element.android.libraries.matrix.impl.timeline
 
 import io.element.android.libraries.core.coroutine.childScope
+import io.element.android.libraries.matrix.impl.timeline.TimelineItemsSubscriber
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -110,5 +111,32 @@ internal class TimelineItemsSubscriber(
         if (diffsToProcess.isNotEmpty()) {
             timelineDiffProcessor.postDiffs(diffsToProcess)
         }
+    }
+
+    private fun handleNewMessages(diffs: List<TimelineDiff>) {
+        val newEvents = diffs.filter { it.eventOrigin() == EventItemOrigin.SYNC }
+        newEvents.forEach { diff ->
+            val eventId = diff.eventId()
+            val roomId = diff.roomId()
+            if (eventId != null && roomId != null) {
+                notificationService.getNotification(roomId, eventId).onSuccess { notificationData ->
+                    notificationData?.let {
+                        showNotification(it)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showNotification(data: NotificationData) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(data.roomDisplayName ?: "New Message")
+            .setContentText(data.content.toString())
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        notificationManager.notify(data.eventId.hashCode(), notification)
     }
 }

@@ -9,8 +9,12 @@ package io.element.android.libraries.matrix.impl.sync
 
 import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.sync.SyncState
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,11 +29,12 @@ import org.matrix.rustcomponents.sdk.SyncService as InnerSyncService
 
 class RustSyncService(
     private val innerSyncService: InnerSyncService,
-    sessionCoroutineScope: CoroutineScope
+    sessionCoroutineScope: CoroutineScope,
+    private val notificationService: NotificationService,
+    private val timelineItemsSubscriber: TimelineItemsSubscriber,
 ) : SyncService {
     private val isServiceReady = AtomicBoolean(true)
-    private lateinit var timelineItemsSubscriber: TimelineItemsSubscriber 
-
+    private lateinit var timelineItemsSubscriber: TimelineItemsSubscriber
     init {
         // 初始化 TimelineItemsSubscriber 并传入 onNewSyncedEvent 回调
         timelineItemsSubscriber = TimelineItemsSubscriber(
