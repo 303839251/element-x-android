@@ -117,6 +117,11 @@ import org.matrix.rustcomponents.sdk.RoomPreset as RustRoomPreset
 import org.matrix.rustcomponents.sdk.RoomVisibility as RustRoomVisibility
 import org.matrix.rustcomponents.sdk.SyncService as ClientSyncService
 
+val timelineItemsSubscriber = TimelineItemsSubscriber(context, timeline, onNewSyncedEvent)
+val notificationService = NotificationService()
+
+val rustMatrixClient = RustMatrixClient(notificationService, timelineItemsSubscriber)
+
 class RustMatrixClient(
     private val innerClient: Client,
     private val baseDirectory: File,

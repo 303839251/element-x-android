@@ -35,6 +35,7 @@ import io.element.android.libraries.matrix.impl.media.toMSC3246range
 import io.element.android.libraries.matrix.impl.poll.toInner
 import io.element.android.libraries.matrix.impl.room.RoomContentForwarder
 import io.element.android.libraries.matrix.impl.room.location.toInner
+import io.element.android.libraries.matrix.impl.sync.NotificationService
 import io.element.android.libraries.matrix.impl.timeline.item.event.EventTimelineItemMapper
 import io.element.android.libraries.matrix.impl.timeline.item.event.TimelineEventContentMapper
 import io.element.android.libraries.matrix.impl.timeline.item.virtual.VirtualTimelineItemMapper
@@ -43,6 +44,7 @@ import io.element.android.libraries.matrix.impl.timeline.postprocessor.LoadingIn
 import io.element.android.libraries.matrix.impl.timeline.postprocessor.RoomBeginningPostProcessor
 import io.element.android.libraries.matrix.impl.timeline.postprocessor.TypingNotificationPostProcessor
 import io.element.android.libraries.matrix.impl.timeline.reply.InReplyToMapper
+import io.element.android.libraries.matrix.impl.timeline.TimelineItemsSubscriber
 import io.element.android.libraries.matrix.impl.util.MessageEventContent
 import io.element.android.services.toolbox.api.systemclock.SystemClock
 import kotlinx.coroutines.CompletableDeferred

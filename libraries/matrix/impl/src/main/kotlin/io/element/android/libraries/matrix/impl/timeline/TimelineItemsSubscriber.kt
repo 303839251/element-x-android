@@ -8,6 +8,7 @@
 package io.element.android.libraries.matrix.impl.timeline
 
 import io.element.android.libraries.core.coroutine.childScope
+import io.element.android.libraries.matrix.impl.sync.NotificationService
 import io.element.android.libraries.matrix.impl.timeline.TimelineItemsSubscriber
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,7 +42,11 @@ internal class TimelineItemsSubscriber(
     private val initLatch: CompletableDeferred<Unit>,
     private val isTimelineInitialized: MutableStateFlow<Boolean>,
     private val onNewSyncedEvent: () -> Unit,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    val eventId: String,
+    val roomId: String,
+    val roomDisplayName: String,
+    val content: String
 ) {
     private var subscriptionCount = 0
     private val mutex = Mutex()

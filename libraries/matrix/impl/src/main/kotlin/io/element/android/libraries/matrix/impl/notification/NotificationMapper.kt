@@ -14,6 +14,8 @@ import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.notification.NotificationContent
 import io.element.android.libraries.matrix.api.notification.NotificationData
 import io.element.android.libraries.matrix.api.room.isDm
+import io.element.android.libraries.matrix.impl.sync.NotificationService
+import io.element.android.libraries.matrix.impl.timeline.TimelineItemsSubscriber
 import io.element.android.services.toolbox.api.systemclock.SystemClock
 import org.matrix.rustcomponents.sdk.NotificationEvent
 import org.matrix.rustcomponents.sdk.NotificationItem
