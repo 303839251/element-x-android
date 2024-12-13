@@ -30,7 +30,6 @@ class ElementXApplication : Application(), DaggerComponentOwner {
         logApplicationInfo(this)
     }
 
-    //新增
     override fun onCreate() {
         super.onCreate()
         // 添加初始化通知通道
