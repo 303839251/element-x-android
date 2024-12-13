@@ -15,6 +15,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -143,7 +144,8 @@ internal class TimelineItemsSubscriber(
         val notification = NotificationCompat.Builder(context, "default_channel_id")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(data.roomDisplayName ?: "New Message")
-            .setContentText(data.content.toString()) // 格式化通知内容
+            // 格式化通知内容
+            .setContentText(data.content.toString())
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
