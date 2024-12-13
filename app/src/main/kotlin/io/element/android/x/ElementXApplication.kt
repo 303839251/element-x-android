@@ -29,6 +29,7 @@ class ElementXApplication : Application(), DaggerComponentOwner {
         }
         logApplicationInfo(this)
     }
+    
     //新增
     override fun onCreate() {
         super.onCreate()
@@ -55,5 +56,4 @@ class ElementXApplication : Application(), DaggerComponentOwner {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
     }
-
 }
