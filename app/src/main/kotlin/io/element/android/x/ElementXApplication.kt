@@ -32,5 +32,8 @@ class ElementXApplication : Application(), DaggerComponentOwner {
             initializeComponent(CacheCleanerInitializer::class.java)
         }
         logApplicationInfo(this)
+		// 启动持久化服务（可根据用户设置判断）
+		startService(Intent(this, PersistentService::class.java))
     }
+
 }
