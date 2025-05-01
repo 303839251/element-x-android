@@ -150,7 +150,7 @@
 		    android:name=".services.PersistentService"
 		    android:enabled="true"
 		    android:exported="false"
-		    android:foregroundServiceType="connectedDevice|messageSync" />
+		    android:foregroundServiceType="connectedDevice|dataSync" />
     </application>
 
 </manifest>
